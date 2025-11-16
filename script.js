@@ -15,7 +15,7 @@ let state = {
   inStudyMode: false
 };
 
-// Session-progress (för 4/14)
+// Session-progress (för x/total)
 let sessionSeenIds = new Set();
 let sessionTotal = 0;
 
@@ -50,22 +50,29 @@ function loadState() {
   }
 }
 
-// DOM-referenser
+// DOM-referenser – views
+const homeViewEl = document.getElementById("homeView");
+const homeEmptyEl = document.getElementById("homeEmpty");
+const courseViewEl = document.getElementById("courseView");
+const studyViewEl = document.getElementById("studyView");
+
+// DOM-referenser – mappar/hemskärm
 const courseListEl = document.getElementById("courseList");
 const addCourseBtn = document.getElementById("addCourseBtn");
+const backHomeBtn = document.getElementById("backHomeBtn");
 const courseModal = document.getElementById("courseModal");
 const courseNameInput = document.getElementById("courseNameInput");
 const cancelCourseBtn = document.getElementById("cancelCourseBtn");
 const saveCourseBtn = document.getElementById("saveCourseBtn");
 
-const noCourseSelectedEl = document.getElementById("noCourseSelected");
-const courseViewEl = document.getElementById("courseView");
+// DOM – kursvy
 const courseTitleEl = document.getElementById("courseTitle");
 const cardListEl = document.getElementById("cardList");
 const noCardsMessageEl = document.getElementById("noCardsMessage");
 const addCardBtn = document.getElementById("addCardBtn");
 const deleteCourseBtn = document.getElementById("deleteCourseBtn");
 
+// DOM – card modal
 const cardModal = document.getElementById("cardModal");
 const cardModalTitle = document.getElementById("cardModalTitle");
 const cardQuestionInput = document.getElementById("cardQuestionInput");
@@ -77,7 +84,7 @@ const removeImageBtn = document.getElementById("removeImageBtn");
 const cancelCardBtn = document.getElementById("cancelCardBtn");
 const saveCardBtn = document.getElementById("saveCardBtn");
 
-const studyViewEl = document.getElementById("studyView");
+// DOM – studyläge
 const studyBtn = document.getElementById("studyBtn");
 const backToCourseBtn = document.getElementById("backToCourseBtn");
 const restartStudyBtn = document.getElementById("restartStudyBtn");
@@ -85,7 +92,6 @@ const studyProgressEl = document.getElementById("studyProgress");
 const studyCardEl = document.getElementById("studyCard");
 const studyCardInnerEl = document.getElementById("studyCardInner");
 const studyQuestionEl = document.getElementById("studyQuestion");
-const studyAnswerContainerEl = document.getElementById("studyAnswerContainer");
 const studyAnswerTextEl = document.getElementById("studyAnswerText");
 const studyAnswerImageEl = document.getElementById("studyAnswerImage");
 const studyFinishedEl = document.getElementById("studyFinished");
@@ -103,7 +109,7 @@ let touchCurrentX = 0;
 let isDraggingCard = false;
 let suppressClickAfterSwipe = false;
 
-// --- Helpers för swipe-visual ---
+// --- Swipe-visual helpers ---
 
 function clearSwipeVisual() {
   if (!studyCardInnerEl) return;
@@ -120,7 +126,6 @@ function updateSwipeVisual(dx) {
     return;
   }
 
-  // Intensitet mellan 0 och 1
   const maxDistance = 140;
   let intensity = absDx / maxDistance;
   if (intensity > 1) intensity = 1;
@@ -136,19 +141,18 @@ function updateSwipeVisual(dx) {
   }
 }
 
-// 🔧 Anpassa kortets höjd efter innehållet (bild + text)
+// Anpassa kortets höjd efter innehållet
 function adjustCardHeight() {
   if (!studyCardInnerEl) return;
   const front = document.querySelector(".study-card-front");
   const back = document.querySelector(".study-card-back");
   if (!front || !back) return;
 
-  // Låt höjden styras av det högsta av fram- och baksida
   const frontHeight = front.scrollHeight;
   const backHeight = back.scrollHeight;
 
-  const minHeight = 220; // ungefärlig min-höjd
-  const maxHeightForViewport = Math.floor(window.innerHeight * 0.75); // max ~75% av skärmen
+  const minHeight = 180;
+  const maxHeightForViewport = Math.floor(window.innerHeight * 0.75);
 
   let target = Math.max(minHeight, frontHeight, backHeight);
   target = Math.min(target, maxHeightForViewport);
@@ -156,14 +160,20 @@ function adjustCardHeight() {
   studyCardInnerEl.style.height = target + "px";
 }
 
-// --- Courses ---
+// --- Courses / mappar ---
 
 function renderCourses() {
   courseListEl.innerHTML = "";
+  const hasCourses = state.courses.length > 0;
+  if (!hasCourses) {
+    homeEmptyEl.classList.remove("hidden");
+  } else {
+    homeEmptyEl.classList.add("hidden");
+  }
+
   state.courses.forEach(course => {
     const li = document.createElement("li");
-    li.className =
-      "course-item" + (course.id === state.selectedCourseId ? " active" : "");
+    li.className = "course-item";
     li.dataset.id = course.id;
 
     const courseName = document.createElement("div");
@@ -202,9 +212,6 @@ function addCourse() {
   if (!name) return;
   const course = { id: uuid(), name };
   state.courses.push(course);
-  if (!state.selectedCourseId) {
-    state.selectedCourseId = course.id;
-  }
   saveState();
   closeCourseModal();
   render();
@@ -223,7 +230,7 @@ function deleteCurrentCourse() {
   }
   state.cards = state.cards.filter(card => card.courseId !== course.id);
   state.courses = state.courses.filter(c => c.id !== course.id);
-  state.selectedCourseId = state.courses[0]?.id || null;
+  state.selectedCourseId = null;
   state.inStudyMode = false;
   saveState();
   render();
@@ -399,7 +406,6 @@ function startStudy(all = true) {
   state.showAnswer = false;
   state.inStudyMode = true;
 
-  // progress
   sessionSeenIds = new Set();
   sessionTotal = cards.length;
 
@@ -454,7 +460,7 @@ function renderStudyView() {
   courseViewEl.classList.add("hidden");
   studyViewEl.classList.remove("hidden");
 
-  // reset transform/flip/overlay
+  // reset transform/overlay
   studyCardEl.style.transform = "";
   studyCardEl.style.opacity = "";
   clearSwipeVisual();
@@ -489,10 +495,10 @@ function renderStudyView() {
     studyCardInnerEl.classList.remove("is-flipped");
   }
 
-  // front-sida
+  // front-sida – fråga (centrerad)
   studyQuestionEl.textContent = card.question;
 
-  // back-sida (svar)
+  // back-sida – svar
   if (card.answerText) {
     studyAnswerTextEl.textContent = card.answerText;
     studyAnswerTextEl.classList.remove("hidden");
@@ -504,6 +510,8 @@ function renderStudyView() {
   if (card.imageData) {
     studyAnswerImageEl.src = card.imageData;
     studyAnswerImageEl.classList.remove("hidden");
+    // när bilden laddat klart, justera höjd
+    studyAnswerImageEl.onload = () => adjustCardHeight();
   } else {
     studyAnswerImageEl.src = "";
     studyAnswerImageEl.classList.add("hidden");
@@ -514,7 +522,7 @@ function renderStudyView() {
     studyAnswerTextEl.classList.remove("hidden");
   }
 
-  // Anpassa kortets höjd efter innehållet (inkl. bild)
+  // Anpassa kortets höjd efter innehållet
   adjustCardHeight();
 }
 
@@ -532,20 +540,22 @@ function render() {
   renderCourses();
   const course = getSelectedCourse();
 
-  if (!course) {
-    noCourseSelectedEl.classList.remove("hidden");
+  if (!course && !state.inStudyMode) {
+    // Hemsärm
+    homeViewEl.classList.remove("hidden");
     courseViewEl.classList.add("hidden");
     studyViewEl.classList.add("hidden");
     return;
   }
 
-  noCourseSelectedEl.classList.add("hidden");
-
   if (state.inStudyMode) {
+    homeViewEl.classList.add("hidden");
     renderStudyView();
   } else {
-    courseViewEl.classList.remove("hidden");
+    // kursvy
+    homeViewEl.classList.add("hidden");
     studyViewEl.classList.add("hidden");
+    courseViewEl.classList.remove("hidden");
     courseTitleEl.textContent = course.name;
     renderCards();
   }
@@ -556,6 +566,12 @@ function render() {
 addCourseBtn.addEventListener("click", openCourseModal);
 cancelCourseBtn.addEventListener("click", closeCourseModal);
 saveCourseBtn.addEventListener("click", addCourse);
+
+backHomeBtn.addEventListener("click", () => {
+  state.selectedCourseId = null;
+  state.inStudyMode = false;
+  render();
+});
 
 addCardBtn.addEventListener("click", () => openCardModal());
 cancelCardBtn.addEventListener("click", closeCardModal);
@@ -617,16 +633,13 @@ studyCardEl.addEventListener(
     const dx = touchCurrentX - touchStartX;
     const dy = touch.clientY - touchStartY;
 
-    // små rörelser → ignorera
     if (Math.abs(dx) < 5 && Math.abs(dy) < 5) return;
 
     if (Math.abs(dy) > Math.abs(dx)) {
-      // mer vertikalt än horisontellt: låt sidan scrolla
-      return;
+      return; // låt scroll om mer vertikalt
     }
 
-    // horisontell swipe → blockera scroll + visa färg
-    e.preventDefault();
+    e.preventDefault(); // blockera sid-scroll
 
     const rotation = dx / 20;
     studyCardEl.style.transform = `translateX(${dx}px) rotate(${rotation}deg)`;
@@ -651,11 +664,9 @@ studyCardEl.addEventListener(
     if (Math.abs(dx) > threshold) {
       suppressClickAfterSwipe = true;
       if (dx > 0) {
-        // höger = rätt
-        handleStudyAnswer(true);
+        handleStudyAnswer(true);  // höger = rätt
       } else {
-        // vänster = fel
-        handleStudyAnswer(false);
+        handleStudyAnswer(false); // vänster = fel
       }
     }
   },
@@ -722,7 +733,7 @@ document.addEventListener("keydown", e => {
   }
 });
 
-// Anpassa kortet om man roterar skärm / ändrar storlek
+// Justera kort om fönstret ändras
 window.addEventListener("resize", () => {
   if (state.inStudyMode && state.studyQueue.length > 0) {
     adjustCardHeight();
