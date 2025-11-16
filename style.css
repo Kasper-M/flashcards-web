@@ -507,9 +507,9 @@ button:disabled,
   opacity: var(--swipe-intensity);
 }
 
-.study-card-inner.is-flipped {
+/* .study-card-inner.is-flipped {
   transform: rotateY(180deg);
-}
+} */
 
 /* FRAM- OCH BAKSIDA – CENTRERAD LAYOUT */
 
@@ -518,6 +518,7 @@ button:disabled,
   inset: 0;
   padding: 1.2rem;
   backface-visibility: hidden;
+  -webkit-backface-visibility: hidden; /* viktigt för iOS/Safari */
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -525,10 +526,24 @@ button:disabled,
   gap: 0.9rem;
   border-radius: 1.1rem;
   text-align: center;
+  transition: transform 0.45s ease; /* 👈 lägg till den här */
+}
+/* FRAMSIDA & BAKSIDA – flip logik */
+
+.study-card-front {
+  transform: rotateY(0deg);
 }
 
 .study-card-back {
   transform: rotateY(180deg);
+}
+
+.study-card-inner.is-flipped .study-card-front {
+  transform: rotateY(-180deg);
+}
+
+.study-card-inner.is-flipped .study-card-back {
+  transform: rotateY(0deg);
 }
 
 .study-question {
