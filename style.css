@@ -311,7 +311,7 @@ button:disabled {
   border-radius: 0.5rem;
   border: 1px solid #d1d5db;
   font-family: inherit;
-  font-size: 0.9rem;
+  font-size: 16px;
 }
 
 .modal-content textarea {
@@ -547,4 +547,5 @@ textarea {
     font-size: 0.9rem;
   }
 }
+
 
