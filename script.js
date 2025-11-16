@@ -1,5 +1,11 @@
-// Enkel data-modell & localStorage-hantering
+// === KONFIG: konto & auth ===
+const ACCOUNT_EMAIL = "melawitalexander86@gmail.com";
+// SHA-256 hash av "MelaKapi"
+const ACCOUNT_PASSWORD_HASH =
+  "a16138bc0d7ccd6b3fca3688085e37dc162f2d9e944c5825833e7ff1f47cf860";
+const AUTH_KEY = "flashcards_auth_v1";
 
+// Lokal lagring av flashcards
 const STORAGE_KEY = "flashcards_app_data_v1";
 
 let state = {
@@ -26,7 +32,7 @@ function uuid() {
     : Math.random().toString(36).substring(2) + Date.now().toString(36);
 }
 
-// Spara / ladda
+// Spara / ladda flashcard-data
 function saveState() {
   localStorage.setItem(
     STORAGE_KEY,
@@ -50,6 +56,64 @@ function loadState() {
   }
 }
 
+// === Auth / login ===
+
+const loginViewEl = document.getElementById("loginView");
+const appContainerEl = document.getElementById("appContainer");
+const loginEmailEl = document.getElementById("loginEmail");
+const loginPasswordEl = document.getElementById("loginPassword");
+const loginBtnEl = document.getElementById("loginBtn");
+const loginErrorEl = document.getElementById("loginError");
+
+function isLoggedIn() {
+  return localStorage.getItem(AUTH_KEY) === "1";
+}
+
+function setLoggedIn() {
+  localStorage.setItem(AUTH_KEY, "1");
+}
+
+function showApp() {
+  loginViewEl.classList.add("hidden");
+  appContainerEl.classList.remove("hidden");
+  render();
+}
+
+async function hashString(str) {
+  if (window.crypto && window.crypto.subtle && window.TextEncoder) {
+    const enc = new TextEncoder().encode(str);
+    const buf = await window.crypto.subtle.digest("SHA-256", enc);
+    const bytes = new Uint8Array(buf);
+    return Array.from(bytes)
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+  } else {
+    // Fallback (ingen riktig säkerhet, men funkar i gamla browsers)
+    return str;
+  }
+}
+
+async function handleLogin() {
+  const email = (loginEmailEl.value || "").trim().toLowerCase();
+  const pwd = loginPasswordEl.value || "";
+
+  loginErrorEl.classList.add("hidden");
+
+  if (email !== ACCOUNT_EMAIL.toLowerCase()) {
+    loginErrorEl.classList.remove("hidden");
+    return;
+  }
+
+  const hash = await hashString(pwd);
+  if (hash !== ACCOUNT_PASSWORD_HASH) {
+    loginErrorEl.classList.remove("hidden");
+    return;
+  }
+
+  setLoggedIn();
+  showApp();
+}
+
 // DOM-referenser – views
 const homeViewEl = document.getElementById("homeView");
 const homeEmptyEl = document.getElementById("homeEmpty");
@@ -64,6 +128,10 @@ const courseModal = document.getElementById("courseModal");
 const courseNameInput = document.getElementById("courseNameInput");
 const cancelCourseBtn = document.getElementById("cancelCourseBtn");
 const saveCourseBtn = document.getElementById("saveCourseBtn");
+
+// Export / import
+const exportDataBtn = document.getElementById("exportDataBtn");
+const importDataInput = document.getElementById("importDataInput");
 
 // DOM – kursvy
 const courseTitleEl = document.getElementById("courseTitle");
@@ -150,15 +218,13 @@ function adjustCardHeight() {
   const back = document.querySelector(".study-card-back");
   if (!front || !back) return;
 
-  // Nollställ först, så vi mäter naturlig höjd
   studyCardInnerEl.style.height = "auto";
 
-  // Använd verklig renderad höjd istället för scrollHeight
   const frontHeight = front.getBoundingClientRect().height;
   const backHeight = back.getBoundingClientRect().height;
 
-  const minHeight = 180; // ungefärlig min-höjd
-  const maxHeightForViewport = Math.floor(window.innerHeight * 0.8); // upp till ~80% av skärmen
+  const minHeight = 180;
+  const maxHeightForViewport = Math.floor(window.innerHeight * 0.8);
 
   let target = Math.max(minHeight, frontHeight, backHeight);
   target = Math.min(target, maxHeightForViewport);
@@ -423,7 +489,6 @@ function handleStudyAnswer(isRight) {
 
   const currentCardId = state.studyQueue[state.currentIndex];
 
-  // räkna progress (gjorda kort)
   sessionSeenIds.add(currentCardId);
 
   if (!isRight) {
@@ -466,7 +531,6 @@ function renderStudyView() {
   courseViewEl.classList.add("hidden");
   studyViewEl.classList.remove("hidden");
 
-  // reset transform/overlay
   studyCardEl.style.transform = "";
   studyCardEl.style.opacity = "";
   clearSwipeVisual();
@@ -486,7 +550,6 @@ function renderStudyView() {
   studyFinishedEl.classList.add("hidden");
   studyCardEl.classList.remove("hidden");
 
-  // Progress: x/total
   const doneCount = sessionSeenIds.size;
   studyProgressEl.textContent = `${doneCount}/${sessionTotal}`;
 
@@ -494,17 +557,14 @@ function renderStudyView() {
   const card = state.cards.find((c) => c.id === cardId);
   if (!card) return;
 
-  // Flip: state.showAnswer styr om vi visar front eller back
   if (state.showAnswer) {
     studyCardInnerEl.classList.add("is-flipped");
   } else {
     studyCardInnerEl.classList.remove("is-flipped");
   }
 
-  // front-sida – fråga (centrerad)
   studyQuestionEl.textContent = card.question;
 
-  // back-sida – svar
   if (card.answerText) {
     studyAnswerTextEl.textContent = card.answerText;
     studyAnswerTextEl.classList.remove("hidden");
@@ -516,7 +576,6 @@ function renderStudyView() {
   if (card.imageData) {
     studyAnswerImageEl.src = card.imageData;
     studyAnswerImageEl.classList.remove("hidden");
-    // när bilden laddat klart, justera höjd
     studyAnswerImageEl.onload = () => adjustCardHeight();
   } else {
     studyAnswerImageEl.src = "";
@@ -528,7 +587,6 @@ function renderStudyView() {
     studyAnswerTextEl.classList.remove("hidden");
   }
 
-  // Anpassa kortets höjd efter innehållet
   adjustCardHeight();
 }
 
@@ -540,6 +598,53 @@ function shuffleArray(arr) {
   }
 }
 
+// --- Export / import backup ---
+
+function handleExportData() {
+  const data = {
+    courses: state.courses,
+    cards: state.cards,
+  };
+  const json = JSON.stringify(data, null, 2);
+  const blob = new Blob([json], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "flashcards-backup.json";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+function handleImportData(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    try {
+      const text = ev.target.result;
+      const data = JSON.parse(text);
+      if (!data || !Array.isArray(data.courses) || !Array.isArray(data.cards)) {
+        throw new Error("Fel format");
+      }
+      state.courses = data.courses;
+      state.cards = data.cards;
+      saveState();
+      alert("Backup importerad.");
+      render();
+    } catch (err) {
+      console.error(err);
+      alert("Kunde inte läsa backup-filen. Kontrollera att det är rätt fil.");
+    } finally {
+      importDataInput.value = "";
+    }
+  };
+  reader.readAsText(file);
+}
+
 // --- Render main ---
 
 function render() {
@@ -547,7 +652,6 @@ function render() {
   const course = getSelectedCourse();
 
   if (!course && !state.inStudyMode) {
-    // Hemsärm
     homeViewEl.classList.remove("hidden");
     courseViewEl.classList.add("hidden");
     studyViewEl.classList.add("hidden");
@@ -558,7 +662,6 @@ function render() {
     homeViewEl.classList.add("hidden");
     renderStudyView();
   } else {
-    // kursvy
     homeViewEl.classList.add("hidden");
     studyViewEl.classList.add("hidden");
     courseViewEl.classList.remove("hidden");
@@ -569,6 +672,18 @@ function render() {
 
 // --- Event listeners ---
 
+// login
+loginBtnEl.addEventListener("click", () => {
+  handleLogin();
+});
+
+loginPasswordEl.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    handleLogin();
+  }
+});
+
+// mappar / hemskärm
 addCourseBtn.addEventListener("click", openCourseModal);
 cancelCourseBtn.addEventListener("click", closeCourseModal);
 saveCourseBtn.addEventListener("click", addCourse);
@@ -579,6 +694,11 @@ backHomeBtn.addEventListener("click", () => {
   render();
 });
 
+// export/import
+exportDataBtn.addEventListener("click", handleExportData);
+importDataInput.addEventListener("change", handleImportData);
+
+// cards
 addCardBtn.addEventListener("click", () => openCardModal());
 cancelCardBtn.addEventListener("click", closeCardModal);
 saveCardBtn.addEventListener("click", saveCard);
@@ -592,6 +712,7 @@ removeImageBtn.addEventListener("click", () => {
 
 deleteCourseBtn.addEventListener("click", deleteCurrentCourse);
 
+// study
 studyBtn.addEventListener("click", () => startStudy(true));
 backToCourseBtn.addEventListener("click", () => {
   state.inStudyMode = false;
@@ -746,6 +867,12 @@ window.addEventListener("resize", () => {
   }
 });
 
-// Init
+// === Init ===
 loadState();
-render();
+
+if (isLoggedIn()) {
+  showApp();
+} else {
+  // visa login, göm app (redan gömd i HTML)
+  loginViewEl.classList.remove("hidden");
+}
