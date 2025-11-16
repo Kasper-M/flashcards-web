@@ -136,6 +136,26 @@ function updateSwipeVisual(dx) {
   }
 }
 
+// 🔧 Anpassa kortets höjd efter innehållet (bild + text)
+function adjustCardHeight() {
+  if (!studyCardInnerEl) return;
+  const front = document.querySelector(".study-card-front");
+  const back = document.querySelector(".study-card-back");
+  if (!front || !back) return;
+
+  // Låt höjden styras av det högsta av fram- och baksida
+  const frontHeight = front.scrollHeight;
+  const backHeight = back.scrollHeight;
+
+  const minHeight = 220; // ungefärlig min-höjd
+  const maxHeightForViewport = Math.floor(window.innerHeight * 0.75); // max ~75% av skärmen
+
+  let target = Math.max(minHeight, frontHeight, backHeight);
+  target = Math.min(target, maxHeightForViewport);
+
+  studyCardInnerEl.style.height = target + "px";
+}
+
 // --- Courses ---
 
 function renderCourses() {
@@ -493,6 +513,9 @@ function renderStudyView() {
     studyAnswerTextEl.textContent = "Inget svar angivet.";
     studyAnswerTextEl.classList.remove("hidden");
   }
+
+  // Anpassa kortets höjd efter innehållet (inkl. bild)
+  adjustCardHeight();
 }
 
 // Fisher-Yates shuffle
@@ -696,6 +719,13 @@ document.addEventListener("keydown", e => {
     e.preventDefault();
     state.showAnswer = !state.showAnswer;
     renderStudyView();
+  }
+});
+
+// Anpassa kortet om man roterar skärm / ändrar storlek
+window.addEventListener("resize", () => {
+  if (state.inStudyMode && state.studyQueue.length > 0) {
+    adjustCardHeight();
   }
 });
 
