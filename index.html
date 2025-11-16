@@ -1,177 +1,149 @@
 <!DOCTYPE html>
 <html lang="sv">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Flashcards med bilder</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-    <link rel="stylesheet" href="style.css" />
-  </head>
-  <body>
-    <div class="app">
-      <header class="header">
-        <h1>Flashcards</h1>
-      </header>
+<head>
+  <meta charset="UTF-8">
+  <title>Flashcards med bilder</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <h1>Flashcards</h1>
+    </header>
 
-      <main class="main">
-        <section class="sidebar">
-          <div class="section-header">
-            <h2>Mappar (kurser)</h2>
-            <button id="addCourseBtn" class="primary small">+ Ny mapp</button>
-          </div>
-          <ul id="courseList" class="course-list"></ul>
-        </section>
+    <main class="main">
+      <section class="sidebar">
+        <div class="section-header">
+          <h2>Mappar (kurser)</h2>
+          <button id="addCourseBtn" class="btn btn-primary btn-sm">+ Ny mapp</button>
+        </div>
+        <ul id="courseList" class="course-list"></ul>
+      </section>
 
-        <section class="content">
-          <div id="noCourseSelected" class="empty-state">
-            <p>Välj en mapp till vänster eller skapa en ny.</p>
-          </div>
+      <section class="content">
+        <div id="noCourseSelected" class="empty-state">
+          <p>Välj en mapp till vänster eller skapa en ny.</p>
+        </div>
 
-          <div id="courseView" class="course-view hidden">
-            <div class="course-header">
-              <h2 id="courseTitle"></h2>
-              <div class="course-actions">
-                <button id="studyBtn" class="primary">Öva</button>
-                <button id="addCardBtn" class="secondary">
-                  + Nytt flashcard
-                </button>
-                <button id="deleteCourseBtn" class="danger">
-                  Ta bort mapp
-                </button>
-              </div>
-            </div>
-
-            <div id="cardListContainer">
-              <table class="card-table">
-                <thead>
-                  <tr>
-                    <th>Fråga</th>
-                    <th>Svar (text)</th>
-                    <th>Bild?</th>
-                    <th>Åtgärder</th>
-                  </tr>
-                </thead>
-                <tbody id="cardList"></tbody>
-              </table>
-              <div id="noCardsMessage" class="empty-state small">
-                <p>Inga flashcards ännu. Skapa ett nytt!</p>
-              </div>
+        <div id="courseView" class="course-view hidden">
+          <div class="course-header">
+            <h2 id="courseTitle"></h2>
+            <div class="course-actions">
+              <button id="studyBtn" class="btn btn-primary">Öva</button>
+              <button id="addCardBtn" class="btn btn-secondary">+ Nytt flashcard</button>
+              <button id="deleteCourseBtn" class="btn btn-danger">Ta bort mapp</button>
             </div>
           </div>
 
-          <div id="studyView" class="study-view hidden">
-            <div class="study-header">
-              <button id="backToCourseBtn" class="secondary small">
-                ← Tillbaka
-              </button>
-              <div class="study-info">
-                <span id="studyProgress"></span>
-                <button id="restartStudyBtn" class="secondary small">
-                  Börja om flashcards
-                </button>
-              </div>
+          <div id="cardListContainer">
+            <table class="card-table">
+              <thead>
+                <tr>
+                  <th>Fråga</th>
+                  <th>Svar (text)</th>
+                  <th>Bild?</th>
+                  <th>Åtgärder</th>
+                </tr>
+              </thead>
+              <tbody id="cardList"></tbody>
+            </table>
+            <div id="noCardsMessage" class="empty-state small">
+              <p>Inga flashcards ännu. Skapa ett nytt!</p>
             </div>
+          </div>
+        </div>
 
-            <div id="studyCardContainer" class="study-card-container">
-              <div id="studyCard" class="study-card">
-                <div id="studyQuestion" class="study-question"></div>
-                <div
-                  id="studyAnswerContainer"
-                  class="study-answer-container hidden"
-                >
-                  <div id="studyAnswerText" class="study-answer-text"></div>
-                  <img
-                    id="studyAnswerImage"
-                    class="study-answer-image hidden"
-                    alt="Svarbild"
-                  />
+        <div id="studyView" class="study-view hidden">
+          <div class="study-header">
+            <button id="backToCourseBtn" class="btn btn-secondary btn-sm">← Tillbaka</button>
+            <div class="study-info">
+              <span id="studyProgress"></span>
+              <button id="restartStudyBtn" class="btn btn-secondary btn-sm">Börja om flashcards</button>
+            </div>
+          </div>
+
+          <div id="studyCardContainer" class="study-card-container">
+            <div id="studyCard" class="study-card">
+              <div id="studyCardInner" class="study-card-inner">
+                <div class="study-card-face study-card-front">
+                  <div id="studyQuestion" class="study-question"></div>
+                  <div class="study-hint">Tryck för att visa svaret.</div>
                 </div>
-                <div class="study-hint">
-                  Klicka på kortet för att visa/dölja svaret.
+                <div class="study-card-face study-card-back">
+                  <div id="studyAnswerContainer" class="study-answer-container">
+                    <div id="studyAnswerText" class="study-answer-text"></div>
+                    <img id="studyAnswerImage" class="study-answer-image hidden" alt="Svarbild">
+                  </div>
+                  <div class="study-hint">Tryck för att visa frågan.</div>
                 </div>
               </div>
             </div>
-
-            <div class="study-controls">
-              <button id="wrongBtn" class="danger large">Fel</button>
-              <button id="rightBtn" class="primary large">Rätt</button>
-            </div>
-
-            <div id="studyFinished" class="study-finished hidden">
-              <h3>Klart!</h3>
-              <p id="studyFinishedText"></p>
-              <button id="studyRestartAllBtn" class="primary">
-                Börja om alla flashcards
-              </button>
-            </div>
           </div>
-        </section>
-      </main>
-    </div>
 
-    <!-- Dialog: Ny mapp -->
-    <div id="courseModal" class="modal hidden">
-      <div class="modal-content">
-        <h3>Ny mapp</h3>
-        <label>
-          Namn:
-          <input
-            type="text"
-            id="courseNameInput"
-            placeholder="t.ex. Matte 1c"
-          />
-        </label>
-        <div class="modal-actions">
-          <button id="cancelCourseBtn" class="secondary">Avbryt</button>
-          <button id="saveCourseBtn" class="primary">Spara</button>
+          <div class="study-controls">
+            <button id="wrongBtn" class="btn btn-danger btn-lg">Fel (vänster)</button>
+            <button id="rightBtn" class="btn btn-primary btn-lg">Rätt (höger)</button>
+          </div>
+
+          <div id="studyFinished" class="study-finished hidden">
+            <h3>Klart!</h3>
+            <p id="studyFinishedText"></p>
+            <button id="studyRestartAllBtn" class="btn btn-primary">Börja om alla flashcards</button>
+          </div>
         </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Dialog: Ny mapp -->
+  <div id="courseModal" class="modal hidden">
+    <div class="modal-content">
+      <h3>Ny mapp</h3>
+      <label>
+        Namn:
+        <input type="text" id="courseNameInput" placeholder="t.ex. Matte 1c">
+      </label>
+      <div class="modal-actions">
+        <button id="cancelCourseBtn" class="btn btn-secondary">Avbryt</button>
+        <button id="saveCourseBtn" class="btn btn-primary">Spara</button>
       </div>
     </div>
+  </div>
 
-    <!-- Dialog: Nytt/Redigera flashcard -->
-    <div id="cardModal" class="modal hidden">
-      <div class="modal-content">
-        <h3 id="cardModalTitle">Nytt flashcard</h3>
+  <!-- Dialog: Nytt/Redigera flashcard -->
+  <div id="cardModal" class="modal hidden">
+    <div class="modal-content">
+      <h3 id="cardModalTitle">Nytt flashcard</h3>
 
-        <label>
-          Fråga:
-          <textarea
-            id="cardQuestionInput"
-            rows="2"
-            placeholder="Fråga..."
-          ></textarea>
-        </label>
+      <label>
+        Fråga:
+        <textarea id="cardQuestionInput" rows="2" placeholder="Fråga..."></textarea>
+      </label>
 
-        <label>
-          Text-svar (valfritt):
-          <textarea
-            id="cardAnswerInput"
-            rows="3"
-            placeholder="Svar i text..."
-          ></textarea>
-        </label>
+      <label>
+        Text-svar (valfritt):
+        <textarea id="cardAnswerInput" rows="3" placeholder="Svar i text..."></textarea>
+      </label>
 
-        <label>
-          Bild som svar (valfritt):
-          <input type="file" id="cardImageInput" accept="image/*" />
-        </label>
+      <label>
+        Bild som svar (valfritt):
+        <input type="file" id="cardImageInput" accept="image/*">
+      </label>
 
-        <div id="cardImagePreviewContainer" class="image-preview hidden">
-          <p>Nuvarande bild:</p>
-          <img id="cardImagePreview" alt="Förhandsvisning" />
-          <button id="removeImageBtn" class="secondary small">
-            Ta bort bild
-          </button>
-        </div>
+      <div id="cardImagePreviewContainer" class="image-preview hidden">
+        <p>Nuvarande bild:</p>
+        <img id="cardImagePreview" alt="Förhandsvisning">
+        <button id="removeImageBtn" class="btn btn-secondary btn-sm">Ta bort bild</button>
+      </div>
 
-        <div class="modal-actions">
-          <button id="cancelCardBtn" class="secondary">Avbryt</button>
-          <button id="saveCardBtn" class="primary">Spara</button>
-        </div>
+      <div class="modal-actions">
+        <button id="cancelCardBtn" class="btn btn-secondary">Avbryt</button>
+        <button id="saveCardBtn" class="btn btn-primary">Spara</button>
       </div>
     </div>
+  </div>
 
-    <script src="script.js"></script>
-  </body>
+  <script src="script.js"></script>
+</body>
 </html>
-
-
