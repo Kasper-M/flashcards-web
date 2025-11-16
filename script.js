@@ -3,16 +3,16 @@
 const STORAGE_KEY = "flashcards_app_data_v1";
 
 let state = {
-  courses: [], // { id, name }
-  cards: [], // { id, courseId, question, answerText, imageData }
+  courses: [],       // { id, name }
+  cards: [],         // { id, courseId, question, answerText, imageData }
   selectedCourseId: null,
 
   // Studie-session
-  studyQueue: [], // array av cardId
+  studyQueue: [],    // array av cardId
   wrongQueue: [],
   currentIndex: 0,
   showAnswer: false,
-  inStudyMode: false,
+  inStudyMode: false
 };
 
 // Helpers för ID
@@ -28,7 +28,7 @@ function saveState() {
     STORAGE_KEY,
     JSON.stringify({
       courses: state.courses,
-      cards: state.cards,
+      cards: state.cards
     })
   );
 }
@@ -67,9 +67,7 @@ const cardModalTitle = document.getElementById("cardModalTitle");
 const cardQuestionInput = document.getElementById("cardQuestionInput");
 const cardAnswerInput = document.getElementById("cardAnswerInput");
 const cardImageInput = document.getElementById("cardImageInput");
-const cardImagePreviewContainer = document.getElementById(
-  "cardImagePreviewContainer"
-);
+const cardImagePreviewContainer = document.getElementById("cardImagePreviewContainer");
 const cardImagePreview = document.getElementById("cardImagePreview");
 const removeImageBtn = document.getElementById("removeImageBtn");
 const cancelCardBtn = document.getElementById("cancelCardBtn");
@@ -95,11 +93,18 @@ const studyRestartAllBtn = document.getElementById("studyRestartAllBtn");
 let editingCardId = null;
 let cardImageDataTemp = null;
 
+// Swipe-state för studyCard
+let touchStartX = 0;
+let touchStartY = 0;
+let touchCurrentX = 0;
+let isDraggingCard = false;
+let suppressClickAfterSwipe = false;
+
 // --- Courses ---
 
 function renderCourses() {
   courseListEl.innerHTML = "";
-  state.courses.forEach((course) => {
+  state.courses.forEach(course => {
     const li = document.createElement("li");
     li.className =
       "course-item" + (course.id === state.selectedCourseId ? " active" : "");
@@ -111,7 +116,7 @@ function renderCourses() {
 
     const courseMeta = document.createElement("div");
     courseMeta.className = "course-meta";
-    const count = state.cards.filter((c) => c.courseId === course.id).length;
+    const count = state.cards.filter(c => c.courseId === course.id).length;
     courseMeta.textContent = `${count} kort`;
 
     li.appendChild(courseName);
@@ -129,7 +134,7 @@ function renderCourses() {
 function openCourseModal() {
   courseNameInput.value = "";
   courseModal.classList.remove("hidden");
-  courseNameInput.focus();
+  setTimeout(() => courseNameInput.focus(), 0);
 }
 
 function closeCourseModal() {
@@ -151,7 +156,7 @@ function addCourse() {
 
 function deleteCurrentCourse() {
   if (!state.selectedCourseId) return;
-  const course = state.courses.find((c) => c.id === state.selectedCourseId);
+  const course = state.courses.find(c => c.id === state.selectedCourseId);
   if (!course) return;
   if (
     !confirm(
@@ -160,8 +165,8 @@ function deleteCurrentCourse() {
   ) {
     return;
   }
-  state.cards = state.cards.filter((card) => card.courseId !== course.id);
-  state.courses = state.courses.filter((c) => c.id !== course.id);
+  state.cards = state.cards.filter(card => card.courseId !== course.id);
+  state.courses = state.courses.filter(c => c.id !== course.id);
   state.selectedCourseId = state.courses[0]?.id || null;
   state.inStudyMode = false;
   saveState();
@@ -171,7 +176,7 @@ function deleteCurrentCourse() {
 // --- Cards ---
 
 function getSelectedCourse() {
-  return state.courses.find((c) => c.id === state.selectedCourseId) || null;
+  return state.courses.find(c => c.id === state.selectedCourseId) || null;
 }
 
 function openCardModal(cardId = null) {
@@ -182,7 +187,7 @@ function openCardModal(cardId = null) {
   cardImagePreview.src = "";
 
   if (cardId) {
-    const card = state.cards.find((c) => c.id === cardId);
+    const card = state.cards.find(c => c.id === cardId);
     if (!card) return;
     cardModalTitle.textContent = "Redigera flashcard";
     cardQuestionInput.value = card.question;
@@ -199,7 +204,7 @@ function openCardModal(cardId = null) {
   }
 
   cardModal.classList.remove("hidden");
-  cardQuestionInput.focus();
+  setTimeout(() => cardQuestionInput.focus(), 0);
 }
 
 function closeCardModal() {
@@ -212,7 +217,7 @@ function handleCardImageChange(e) {
   const file = e.target.files[0];
   if (!file) return;
   const reader = new FileReader();
-  reader.onload = (ev) => {
+  reader.onload = ev => {
     cardImageDataTemp = ev.target.result; // Data URL
     cardImagePreview.src = cardImageDataTemp;
     cardImagePreviewContainer.classList.remove("hidden");
@@ -232,7 +237,7 @@ function saveCard() {
   }
 
   if (editingCardId) {
-    const card = state.cards.find((c) => c.id === editingCardId);
+    const card = state.cards.find(c => c.id === editingCardId);
     if (!card) return;
     card.question = question;
     card.answerText = answerText;
@@ -243,7 +248,7 @@ function saveCard() {
       courseId: course.id,
       question,
       answerText,
-      imageData: cardImageDataTemp,
+      imageData: cardImageDataTemp
     };
     state.cards.push(card);
   }
@@ -254,7 +259,7 @@ function saveCard() {
 
 function deleteCard(cardId) {
   if (!confirm("Ta bort detta flashcard?")) return;
-  state.cards = state.cards.filter((c) => c.id !== cardId);
+  state.cards = state.cards.filter(c => c.id !== cardId);
   saveState();
   render();
 }
@@ -263,7 +268,7 @@ function renderCards() {
   const course = getSelectedCourse();
   if (!course) return;
 
-  const cards = state.cards.filter((c) => c.courseId === course.id);
+  const cards = state.cards.filter(c => c.courseId === course.id);
   cardListEl.innerHTML = "";
 
   if (cards.length === 0) {
@@ -272,7 +277,7 @@ function renderCards() {
     noCardsMessageEl.classList.add("hidden");
   }
 
-  cards.forEach((card) => {
+  cards.forEach(card => {
     const tr = document.createElement("tr");
 
     const tdQuestion = document.createElement("td");
@@ -320,16 +325,15 @@ function renderCards() {
 function startStudy(all = true) {
   const course = getSelectedCourse();
   if (!course) return;
-  const cards = state.cards.filter((c) => c.courseId === course.id);
+  const cards = state.cards.filter(c => c.courseId === course.id);
   if (cards.length === 0) {
     alert("Det finns inga flashcards i den här mappen.");
     return;
   }
 
   if (all) {
-    state.studyQueue = cards.map((c) => c.id);
+    state.studyQueue = cards.map(c => c.id);
   } else {
-    // om vi vill stödja "bara fel" någon gång separat
     state.studyQueue = state.wrongQueue.slice();
   }
 
@@ -342,30 +346,11 @@ function startStudy(all = true) {
   render();
 }
 
-function restartStudyOnlyWrong() {
-  if (state.wrongQueue.length === 0) {
-    // inget fel kvar -> session klar
-    state.inStudyMode = true;
-    state.studyQueue = [];
-    state.currentIndex = 0;
-    state.showAnswer = false;
-    renderStudyView();
-    return;
-  }
-  state.studyQueue = state.wrongQueue.slice();
-  shuffleArray(state.studyQueue);
-  state.wrongQueue = [];
-  state.currentIndex = 0;
-  state.showAnswer = false;
-  render();
-}
-
 function handleStudyAnswer(isRight) {
   if (!state.inStudyMode || state.studyQueue.length === 0) return;
 
   const currentCardId = state.studyQueue[state.currentIndex];
   if (!isRight) {
-    // lägg till i fel-lista om den inte redan finns
     if (!state.wrongQueue.includes(currentCardId)) {
       state.wrongQueue.push(currentCardId);
     }
@@ -374,16 +359,13 @@ function handleStudyAnswer(isRight) {
   state.currentIndex++;
 
   if (state.currentIndex >= state.studyQueue.length) {
-    // slut på nuvarande omgång
     if (state.wrongQueue.length > 0) {
-      // ny omgång bara med fel
       state.studyQueue = state.wrongQueue.slice();
       shuffleArray(state.studyQueue);
       state.wrongQueue = [];
       state.currentIndex = 0;
       state.showAnswer = false;
     } else {
-      // allt rätt → färdig
       state.studyQueue = [];
       state.currentIndex = 0;
       state.showAnswer = false;
@@ -409,8 +391,11 @@ function renderStudyView() {
   courseViewEl.classList.add("hidden");
   studyViewEl.classList.remove("hidden");
 
+  // reset ev. transform från swipe
+  studyCardEl.style.transform = "";
+  studyCardEl.style.opacity = "";
+
   if (!hasCards) {
-    // session färdig
     studyCardEl.classList.add("hidden");
     studyFinishedEl.classList.remove("hidden");
     restartStudyBtn.disabled = false;
@@ -418,9 +403,7 @@ function renderStudyView() {
     wrongBtn.disabled = true;
     rightBtn.disabled = true;
 
-    const totalWrongRound = 0; // vi behöver inte visa exakt här
     studyProgressEl.textContent = "0 kort kvar";
-
     studyFinishedTextEl.textContent =
       "Du har klarat alla flashcards i den här mappen.";
     return;
@@ -435,7 +418,7 @@ function renderStudyView() {
   studyProgressEl.textContent = `${remaining} kort kvar i denna omgång`;
 
   const cardId = state.studyQueue[state.currentIndex];
-  const card = state.cards.find((c) => c.id === cardId);
+  const card = state.cards.find(c => c.id === cardId);
   if (!card) return;
 
   studyQuestionEl.textContent = card.question;
@@ -532,15 +515,121 @@ studyRestartAllBtn.addEventListener("click", () => {
   startStudy(true);
 });
 
+// Klick på kortet = toggla visa/dölj svar (men inte direkt efter en swipe)
 studyCardEl.addEventListener("click", () => {
+  if (suppressClickAfterSwipe) {
+    suppressClickAfterSwipe = false;
+    return;
+  }
   state.showAnswer = !state.showAnswer;
   renderStudyView();
 });
 
-wrongBtn.addEventListener("click", () => handleStudyAnswer(false));
-rightBtn.addEventListener("click", () => handleStudyAnswer(true));
+// Swipe med touch (mobil)
+studyCardEl.addEventListener(
+  "touchstart",
+  e => {
+    if (!state.inStudyMode || state.studyQueue.length === 0) return;
+    const touch = e.touches[0];
+    touchStartX = touch.clientX;
+    touchStartY = touch.clientY;
+    touchCurrentX = touch.clientX;
+    isDraggingCard = true;
+  },
+  { passive: true }
+);
 
-document.addEventListener("keydown", (e) => {
+studyCardEl.addEventListener(
+  "touchmove",
+  e => {
+    if (!isDraggingCard) return;
+    const touch = e.touches[0];
+    touchCurrentX = touch.clientX;
+    const dx = touchCurrentX - touchStartX;
+    const dy = touch.clientY - touchStartY;
+
+    // Om draget är mer vertikalt än horisontellt: ignorera (för att låta sidan scrolla)
+    if (Math.abs(dy) > Math.abs(dx)) return;
+
+    const rotation = dx / 20;
+    studyCardEl.style.transform = `translateX(${dx}px) rotate(${rotation}deg)`;
+  },
+  { passive: true }
+);
+
+studyCardEl.addEventListener(
+  "touchend",
+  e => {
+    if (!isDraggingCard) return;
+    isDraggingCard = false;
+
+    const dx = touchCurrentX - touchStartX;
+    const threshold = 60;
+
+    // reset karta
+    studyCardEl.style.transform = "";
+    studyCardEl.style.opacity = "";
+
+    if (Math.abs(dx) > threshold) {
+      suppressClickAfterSwipe = true;
+      if (dx > 0) {
+        // höger = rätt
+        handleStudyAnswer(true);
+      } else {
+        // vänster = fel
+        handleStudyAnswer(false);
+      }
+    }
+  },
+  { passive: true }
+);
+
+// (Valfritt) swipe med mus/trackpad också
+studyCardEl.addEventListener("mousedown", e => {
+  if (!state.inStudyMode || state.studyQueue.length === 0) return;
+  isDraggingCard = true;
+  touchStartX = e.clientX;
+  touchStartY = e.clientY;
+  touchCurrentX = e.clientX;
+
+  const onMouseMove = ev => {
+    if (!isDraggingCard) return;
+    touchCurrentX = ev.clientX;
+    const dx = touchCurrentX - touchStartX;
+    const dy = ev.clientY - touchStartY;
+    if (Math.abs(dy) > Math.abs(dx)) return;
+    const rotation = dx / 20;
+    studyCardEl.style.transform = `translateX(${dx}px) rotate(${rotation}deg)`;
+  };
+
+  const onMouseUp = ev => {
+    if (!isDraggingCard) return;
+    isDraggingCard = false;
+    document.removeEventListener("mousemove", onMouseMove);
+    document.removeEventListener("mouseup", onMouseUp);
+
+    const dx = ev.clientX - touchStartX;
+    const threshold = 80;
+
+    studyCardEl.style.transform = "";
+    studyCardEl.style.opacity = "";
+
+    if (Math.abs(dx) > threshold) {
+      suppressClickAfterSwipe = true;
+      if (dx > 0) {
+        handleStudyAnswer(true);
+      } else {
+        handleStudyAnswer(false);
+      }
+    }
+  };
+
+  document.addEventListener("mousemove", onMouseMove);
+  document.addEventListener("mouseup", onMouseUp);
+});
+
+// Tangentbord: vänster/höger pil + space
+document.addEventListener("keydown", e => {
   if (!state.inStudyMode) return;
   if (e.key === "ArrowLeft") {
     handleStudyAnswer(false);
