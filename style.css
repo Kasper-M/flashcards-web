@@ -4,7 +4,8 @@
 
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
   background: radial-gradient(circle at top, #020617, #020617);
   color: #e5e7eb;
 }
@@ -208,11 +209,8 @@ button,
   border-radius: 999px;
   border: none;
   cursor: pointer;
-  transition:
-    transform 0.1s ease-out,
-    box-shadow 0.12s ease-out,
-    background 0.15s,
-    opacity 0.1s;
+  transition: transform 0.1s ease-out, box-shadow 0.12s ease-out,
+    background 0.15s, opacity 0.1s;
   font-weight: 500;
 }
 
@@ -403,9 +401,7 @@ button:disabled,
   width: 100%;
   transition: transform 0.45s ease;
   transform-style: preserve-3d;
-  box-shadow:
-    0 20px 50px rgba(0, 0, 0, 0.9),
-    0 0 0 1px rgba(15, 23, 42, 0.9);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(15, 23, 42, 0.9);
   border-radius: 1.1rem;
   background: radial-gradient(circle at top left, #111827, #020617);
   --swipe-intensity: 0;
@@ -423,12 +419,20 @@ button:disabled,
 }
 
 .study-card-inner.swipe-right::before {
-  background: radial-gradient(circle at 85% 20%, rgba(34, 197, 94, 0.9), transparent 60%);
+  background: radial-gradient(
+    circle at 85% 20%,
+    rgba(34, 197, 94, 0.9),
+    transparent 60%
+  );
   opacity: var(--swipe-intensity);
 }
 
 .study-card-inner.swipe-left::before {
-  background: radial-gradient(circle at 15% 20%, rgba(239, 68, 68, 0.9), transparent 60%);
+  background: radial-gradient(
+    circle at 15% 20%,
+    rgba(239, 68, 68, 0.9),
+    transparent 60%
+  );
   opacity: var(--swipe-intensity);
 }
 
@@ -446,7 +450,7 @@ button:disabled,
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;  /* centrerar vertikalt */
+  justify-content: center; /* centrerar vertikalt */
   gap: 0.9rem;
   border-radius: 1.1rem;
   text-align: center;

@@ -3,16 +3,16 @@
 const STORAGE_KEY = "flashcards_app_data_v1";
 
 let state = {
-  courses: [],       // { id, name }
-  cards: [],         // { id, courseId, question, answerText, imageData }
+  courses: [], // { id, name }
+  cards: [], // { id, courseId, question, answerText, imageData }
   selectedCourseId: null,
 
   // Studie-session
-  studyQueue: [],    // array av cardId
+  studyQueue: [], // array av cardId
   wrongQueue: [],
   currentIndex: 0,
   showAnswer: false,
-  inStudyMode: false
+  inStudyMode: false,
 };
 
 // Session-progress (för x/total)
@@ -32,7 +32,7 @@ function saveState() {
     STORAGE_KEY,
     JSON.stringify({
       courses: state.courses,
-      cards: state.cards
+      cards: state.cards,
     })
   );
 }
@@ -78,7 +78,9 @@ const cardModalTitle = document.getElementById("cardModalTitle");
 const cardQuestionInput = document.getElementById("cardQuestionInput");
 const cardAnswerInput = document.getElementById("cardAnswerInput");
 const cardImageInput = document.getElementById("cardImageInput");
-const cardImagePreviewContainer = document.getElementById("cardImagePreviewContainer");
+const cardImagePreviewContainer = document.getElementById(
+  "cardImagePreviewContainer"
+);
 const cardImagePreview = document.getElementById("cardImagePreview");
 const removeImageBtn = document.getElementById("removeImageBtn");
 const cancelCardBtn = document.getElementById("cancelCardBtn");
@@ -171,7 +173,7 @@ function renderCourses() {
     homeEmptyEl.classList.add("hidden");
   }
 
-  state.courses.forEach(course => {
+  state.courses.forEach((course) => {
     const li = document.createElement("li");
     li.className = "course-item";
     li.dataset.id = course.id;
@@ -182,7 +184,7 @@ function renderCourses() {
 
     const courseMeta = document.createElement("div");
     courseMeta.className = "course-meta";
-    const count = state.cards.filter(c => c.courseId === course.id).length;
+    const count = state.cards.filter((c) => c.courseId === course.id).length;
     courseMeta.textContent = `${count} kort`;
 
     li.appendChild(courseName);
@@ -219,7 +221,7 @@ function addCourse() {
 
 function deleteCurrentCourse() {
   if (!state.selectedCourseId) return;
-  const course = state.courses.find(c => c.id === state.selectedCourseId);
+  const course = state.courses.find((c) => c.id === state.selectedCourseId);
   if (!course) return;
   if (
     !confirm(
@@ -228,8 +230,8 @@ function deleteCurrentCourse() {
   ) {
     return;
   }
-  state.cards = state.cards.filter(card => card.courseId !== course.id);
-  state.courses = state.courses.filter(c => c.id !== course.id);
+  state.cards = state.cards.filter((card) => card.courseId !== course.id);
+  state.courses = state.courses.filter((c) => c.id !== course.id);
   state.selectedCourseId = null;
   state.inStudyMode = false;
   saveState();
@@ -239,7 +241,7 @@ function deleteCurrentCourse() {
 // --- Cards ---
 
 function getSelectedCourse() {
-  return state.courses.find(c => c.id === state.selectedCourseId) || null;
+  return state.courses.find((c) => c.id === state.selectedCourseId) || null;
 }
 
 function openCardModal(cardId = null) {
@@ -250,7 +252,7 @@ function openCardModal(cardId = null) {
   cardImagePreview.src = "";
 
   if (cardId) {
-    const card = state.cards.find(c => c.id === cardId);
+    const card = state.cards.find((c) => c.id === cardId);
     if (!card) return;
     cardModalTitle.textContent = "Redigera flashcard";
     cardQuestionInput.value = card.question;
@@ -280,7 +282,7 @@ function handleCardImageChange(e) {
   const file = e.target.files[0];
   if (!file) return;
   const reader = new FileReader();
-  reader.onload = ev => {
+  reader.onload = (ev) => {
     cardImageDataTemp = ev.target.result; // Data URL
     cardImagePreview.src = cardImageDataTemp;
     cardImagePreviewContainer.classList.remove("hidden");
@@ -300,7 +302,7 @@ function saveCard() {
   }
 
   if (editingCardId) {
-    const card = state.cards.find(c => c.id === editingCardId);
+    const card = state.cards.find((c) => c.id === editingCardId);
     if (!card) return;
     card.question = question;
     card.answerText = answerText;
@@ -311,7 +313,7 @@ function saveCard() {
       courseId: course.id,
       question,
       answerText,
-      imageData: cardImageDataTemp
+      imageData: cardImageDataTemp,
     };
     state.cards.push(card);
   }
@@ -322,7 +324,7 @@ function saveCard() {
 
 function deleteCard(cardId) {
   if (!confirm("Ta bort detta flashcard?")) return;
-  state.cards = state.cards.filter(c => c.id !== cardId);
+  state.cards = state.cards.filter((c) => c.id !== cardId);
   saveState();
   render();
 }
@@ -331,7 +333,7 @@ function renderCards() {
   const course = getSelectedCourse();
   if (!course) return;
 
-  const cards = state.cards.filter(c => c.courseId === course.id);
+  const cards = state.cards.filter((c) => c.courseId === course.id);
   cardListEl.innerHTML = "";
 
   if (cards.length === 0) {
@@ -340,7 +342,7 @@ function renderCards() {
     noCardsMessageEl.classList.add("hidden");
   }
 
-  cards.forEach(card => {
+  cards.forEach((card) => {
     const tr = document.createElement("tr");
 
     const tdQuestion = document.createElement("td");
@@ -388,14 +390,14 @@ function renderCards() {
 function startStudy(all = true) {
   const course = getSelectedCourse();
   if (!course) return;
-  const cards = state.cards.filter(c => c.courseId === course.id);
+  const cards = state.cards.filter((c) => c.courseId === course.id);
   if (cards.length === 0) {
     alert("Det finns inga flashcards i den här mappen.");
     return;
   }
 
   if (all) {
-    state.studyQueue = cards.map(c => c.id);
+    state.studyQueue = cards.map((c) => c.id);
   } else {
     state.studyQueue = state.wrongQueue.slice();
   }
@@ -485,7 +487,7 @@ function renderStudyView() {
   studyProgressEl.textContent = `${doneCount}/${sessionTotal}`;
 
   const cardId = state.studyQueue[state.currentIndex];
-  const card = state.cards.find(c => c.id === cardId);
+  const card = state.cards.find((c) => c.id === cardId);
   if (!card) return;
 
   // Flip: state.showAnswer styr om vi visar front eller back
@@ -613,7 +615,7 @@ studyCardEl.addEventListener("click", () => {
 // Touch (mobil)
 studyCardEl.addEventListener(
   "touchstart",
-  e => {
+  (e) => {
     if (!state.inStudyMode || state.studyQueue.length === 0) return;
     const touch = e.touches[0];
     touchStartX = touch.clientX;
@@ -626,7 +628,7 @@ studyCardEl.addEventListener(
 
 studyCardEl.addEventListener(
   "touchmove",
-  e => {
+  (e) => {
     if (!isDraggingCard) return;
     const touch = e.touches[0];
     touchCurrentX = touch.clientX;
@@ -650,7 +652,7 @@ studyCardEl.addEventListener(
 
 studyCardEl.addEventListener(
   "touchend",
-  e => {
+  (e) => {
     if (!isDraggingCard) return;
     isDraggingCard = false;
 
@@ -664,7 +666,7 @@ studyCardEl.addEventListener(
     if (Math.abs(dx) > threshold) {
       suppressClickAfterSwipe = true;
       if (dx > 0) {
-        handleStudyAnswer(true);  // höger = rätt
+        handleStudyAnswer(true); // höger = rätt
       } else {
         handleStudyAnswer(false); // vänster = fel
       }
@@ -674,14 +676,14 @@ studyCardEl.addEventListener(
 );
 
 // Mus / trackpad (desktop)
-studyCardEl.addEventListener("mousedown", e => {
+studyCardEl.addEventListener("mousedown", (e) => {
   if (!state.inStudyMode || state.studyQueue.length === 0) return;
   isDraggingCard = true;
   touchStartX = e.clientX;
   touchStartY = e.clientY;
   touchCurrentX = e.clientX;
 
-  const onMouseMove = ev => {
+  const onMouseMove = (ev) => {
     if (!isDraggingCard) return;
     touchCurrentX = ev.clientX;
     const dx = touchCurrentX - touchStartX;
@@ -692,7 +694,7 @@ studyCardEl.addEventListener("mousedown", e => {
     updateSwipeVisual(dx);
   };
 
-  const onMouseUp = ev => {
+  const onMouseUp = (ev) => {
     if (!isDraggingCard) return;
     isDraggingCard = false;
     document.removeEventListener("mousemove", onMouseMove);
@@ -720,7 +722,7 @@ studyCardEl.addEventListener("mousedown", e => {
 });
 
 // Tangentbord: vänster/höger pil + space
-document.addEventListener("keydown", e => {
+document.addEventListener("keydown", (e) => {
   if (!state.inStudyMode) return;
   if (e.key === "ArrowLeft") {
     handleStudyAnswer(false);
