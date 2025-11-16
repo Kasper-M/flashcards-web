@@ -88,8 +88,6 @@ const studyQuestionEl = document.getElementById("studyQuestion");
 const studyAnswerContainerEl = document.getElementById("studyAnswerContainer");
 const studyAnswerTextEl = document.getElementById("studyAnswerText");
 const studyAnswerImageEl = document.getElementById("studyAnswerImage");
-const wrongBtn = document.getElementById("wrongBtn");
-const rightBtn = document.getElementById("rightBtn");
 const studyFinishedEl = document.getElementById("studyFinished");
 const studyFinishedTextEl = document.getElementById("studyFinishedText");
 const studyRestartAllBtn = document.getElementById("studyRestartAllBtn");
@@ -104,6 +102,39 @@ let touchStartY = 0;
 let touchCurrentX = 0;
 let isDraggingCard = false;
 let suppressClickAfterSwipe = false;
+
+// --- Helpers för swipe-visual ---
+
+function clearSwipeVisual() {
+  if (!studyCardInnerEl) return;
+  studyCardInnerEl.classList.remove("swipe-right", "swipe-left");
+  studyCardInnerEl.style.setProperty("--swipe-intensity", "0");
+}
+
+function updateSwipeVisual(dx) {
+  if (!studyCardInnerEl) return;
+
+  const absDx = Math.abs(dx);
+  if (absDx < 5) {
+    clearSwipeVisual();
+    return;
+  }
+
+  // Intensitet mellan 0 och 1
+  const maxDistance = 140;
+  let intensity = absDx / maxDistance;
+  if (intensity > 1) intensity = 1;
+
+  studyCardInnerEl.style.setProperty("--swipe-intensity", intensity.toString());
+
+  if (dx > 0) {
+    studyCardInnerEl.classList.add("swipe-right");
+    studyCardInnerEl.classList.remove("swipe-left");
+  } else {
+    studyCardInnerEl.classList.add("swipe-left");
+    studyCardInnerEl.classList.remove("swipe-right");
+  }
+}
 
 // --- Courses ---
 
@@ -403,17 +434,16 @@ function renderStudyView() {
   courseViewEl.classList.add("hidden");
   studyViewEl.classList.remove("hidden");
 
-  // reset transform/flip
+  // reset transform/flip/overlay
   studyCardEl.style.transform = "";
   studyCardEl.style.opacity = "";
+  clearSwipeVisual();
 
   if (!hasCards) {
     studyCardEl.classList.add("hidden");
     studyFinishedEl.classList.remove("hidden");
     restartStudyBtn.disabled = false;
     studyRestartAllBtn.disabled = false;
-    wrongBtn.disabled = true;
-    rightBtn.disabled = true;
 
     studyProgressEl.textContent = `${sessionTotal}/${sessionTotal}`;
     studyFinishedTextEl.textContent =
@@ -423,8 +453,6 @@ function renderStudyView() {
 
   studyFinishedEl.classList.add("hidden");
   studyCardEl.classList.remove("hidden");
-  wrongBtn.disabled = false;
-  rightBtn.disabled = false;
 
   // Progress: x/total
   const doneCount = sessionSeenIds.size;
@@ -434,7 +462,7 @@ function renderStudyView() {
   const card = state.cards.find(c => c.id === cardId);
   if (!card) return;
 
-  // se till att vi visar fronten om state.showAnswer = false
+  // Flip: state.showAnswer styr om vi visar front eller back
   if (state.showAnswer) {
     studyCardInnerEl.classList.add("is-flipped");
   } else {
@@ -541,7 +569,7 @@ studyCardEl.addEventListener("click", () => {
   renderStudyView();
 });
 
-/* ===== SWIPE-PÅ-KORTET MED BLOCKERAD SID-SCROLL ===== */
+/* ===== SWIPE-PÅ-KORTET MED FÄRG & BLOCKERAD SID-SCROLL ===== */
 
 // Touch (mobil)
 studyCardEl.addEventListener(
@@ -574,11 +602,12 @@ studyCardEl.addEventListener(
       return;
     }
 
-    // nu är det horisontell swipe → blockera scroll
+    // horisontell swipe → blockera scroll + visa färg
     e.preventDefault();
 
     const rotation = dx / 20;
     studyCardEl.style.transform = `translateX(${dx}px) rotate(${rotation}deg)`;
+    updateSwipeVisual(dx);
   },
   { passive: false }
 );
@@ -594,6 +623,7 @@ studyCardEl.addEventListener(
 
     studyCardEl.style.transform = "";
     studyCardEl.style.opacity = "";
+    clearSwipeVisual();
 
     if (Math.abs(dx) > threshold) {
       suppressClickAfterSwipe = true;
@@ -625,6 +655,7 @@ studyCardEl.addEventListener("mousedown", e => {
     if (Math.abs(dy) > Math.abs(dx)) return;
     const rotation = dx / 20;
     studyCardEl.style.transform = `translateX(${dx}px) rotate(${rotation}deg)`;
+    updateSwipeVisual(dx);
   };
 
   const onMouseUp = ev => {
@@ -638,6 +669,7 @@ studyCardEl.addEventListener("mousedown", e => {
 
     studyCardEl.style.transform = "";
     studyCardEl.style.opacity = "";
+    clearSwipeVisual();
 
     if (Math.abs(dx) > threshold) {
       suppressClickAfterSwipe = true;
