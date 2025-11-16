@@ -405,6 +405,7 @@ button:disabled,
   border-radius: 1.1rem;
   background: radial-gradient(circle at top left, #111827, #020617);
   --swipe-intensity: 0;
+  overflow: hidden; /* 🔥 inget får hänga utanför kortet */
 }
 
 /* färg-overlay vid swipe (grön/röd) */

@@ -150,11 +150,15 @@ function adjustCardHeight() {
   const back = document.querySelector(".study-card-back");
   if (!front || !back) return;
 
-  const frontHeight = front.scrollHeight;
-  const backHeight = back.scrollHeight;
+  // Nollställ först, så vi mäter naturlig höjd
+  studyCardInnerEl.style.height = "auto";
 
-  const minHeight = 180;
-  const maxHeightForViewport = Math.floor(window.innerHeight * 0.75);
+  // Använd verklig renderad höjd istället för scrollHeight
+  const frontHeight = front.getBoundingClientRect().height;
+  const backHeight = back.getBoundingClientRect().height;
+
+  const minHeight = 180; // ungefärlig min-höjd
+  const maxHeightForViewport = Math.floor(window.innerHeight * 0.8); // upp till ~80% av skärmen
 
   let target = Math.max(minHeight, frontHeight, backHeight);
   target = Math.min(target, maxHeightForViewport);
