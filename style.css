@@ -523,6 +523,13 @@ button:disabled {
   }
 }
 
+/* Hindra iOS från att auto-zooma in på inputs/textarea genom att ha minst 16px text */
+input,
+textarea {
+  font-size: 16px;
+}
+
+
 @media (max-width: 480px) {
   .header h1 {
     font-size: 1.05rem;
@@ -540,3 +547,4 @@ button:disabled {
     font-size: 0.9rem;
   }
 }
+
