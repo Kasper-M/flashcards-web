@@ -4,8 +4,7 @@
 
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-    sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   background: #f3f4f6;
   color: #111827;
 }
@@ -32,6 +31,8 @@ body {
   display: flex;
   min-height: 0;
 }
+
+/* SIDEBAR / MAPPLISTA */
 
 .sidebar {
   width: 260px;
@@ -89,6 +90,8 @@ body {
   color: #6b7280;
 }
 
+/* HUVUDINNEHÅLL */
+
 .content {
   flex: 1;
   padding: 1rem;
@@ -114,6 +117,8 @@ body {
   flex-wrap: wrap;
   gap: 0.5rem;
 }
+
+/* TABELL MED CARDS */
 
 .card-table {
   width: 100%;
@@ -167,12 +172,12 @@ body {
   display: none !important;
 }
 
+/* KNAPPAR */
+
 .button,
 button {
   font-family: inherit;
 }
-
-/* Buttons */
 
 .primary {
   background: #2563eb;
@@ -223,10 +228,10 @@ button {
 
 .large {
   font-size: 1rem;
-  padding: 0.6rem 1.2rem;
+  padding: 0.75rem 1.1rem;
 }
 
-/* Modal */
+/* MODALER */
 
 .modal {
   position: fixed;
@@ -281,14 +286,25 @@ button {
   margin-top: 0.75rem;
 }
 
-.image-preview img {
-  max-width: 100%;
-  max-height: 200px;
-  border-radius: 0.5rem;
+/* 🔧 BILDER – VISA I ORIGINALPROPORTIONER (ingen stretching) */
+
+.image-preview img,
+.study-answer-image {
   display: block;
+  width: auto;          /* använd bildens egna proportioner */
+  height: auto;
+  max-width: 100%;      /* skala ner om den är bredare än kortet */
+  max-height: 60vh;     /* skala ner om den är för hög för skärmen */
+  object-fit: contain;  /* behåll aspect ratio, ingen beskärning */
+  margin-inline: auto;  /* centrera */
+  border-radius: 0.5rem;
 }
 
-/* Study view */
+.image-preview {
+  margin-top: 0.5rem;
+}
+
+/* STUDY VIEW */
 
 .study-view {
   display: flex;
@@ -301,6 +317,7 @@ button {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 0.5rem;
 }
 
 .study-info {
@@ -314,7 +331,7 @@ button {
   flex: 1;
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start; /* på mobil känns det bättre att börja högre upp */
   min-height: 260px;
 }
 
@@ -348,12 +365,6 @@ button {
   font-size: 0.95rem;
 }
 
-.study-answer-image {
-  max-width: 100%;
-  max-height: 260px;
-  border-radius: 0.5rem;
-}
-
 .study-hint {
   font-size: 0.8rem;
   color: #6b7280;
@@ -363,6 +374,12 @@ button {
   display: flex;
   justify-content: center;
   gap: 1rem;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.study-controls button {
+  flex: 1 1 140px;
 }
 
 .study-finished {
@@ -370,7 +387,7 @@ button {
   margin-top: 1rem;
 }
 
-/* Responsive */
+/* RESPONSIVE / MOBILANPASSNING */
 
 @media (max-width: 800px) {
   .main {
@@ -381,10 +398,81 @@ button {
     width: 100%;
     border-right: none;
     border-bottom: 1px solid #e5e7eb;
-    max-height: 220px;
+    max-height: 180px;
+    padding: 0.5rem 0.75rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  .course-list {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: nowrap;
+  }
+
+  .course-item {
+    min-width: 150px;
+    background: white;
+    border: 1px solid #e5e7eb;
   }
 
   .content {
     padding: 0.75rem;
+  }
+
+  .course-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .course-actions {
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .course-actions button {
+    flex: 1 1 30%;
+  }
+
+  .study-card-container {
+    min-height: 220px;
+  }
+
+  .study-card {
+    padding: 1rem;
+  }
+
+  .study-controls {
+    gap: 0.5rem;
+  }
+
+  .large {
+    font-size: 0.95rem;
+    padding: 0.6rem 0.8rem;
+  }
+}
+
+/* Extra tight för riktigt små skärmar */
+
+@media (max-width: 480px) {
+  .header h1 {
+    font-size: 1.1rem;
+  }
+
+  .sidebar {
+    max-height: 160px;
+  }
+
+  .study-card {
+    box-shadow: 0 6px 16px rgba(15, 23, 42, 0.18);
+  }
+
+  .study-question {
+    font-size: 1rem;
+  }
+
+  .study-answer-text {
+    font-size: 0.9rem;
   }
 }
