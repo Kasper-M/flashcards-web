@@ -15,6 +15,10 @@ let state = {
   inStudyMode: false
 };
 
+// Session-progress (för 4/14)
+let sessionSeenIds = new Set();
+let sessionTotal = 0;
+
 // Helpers för ID
 function uuid() {
   return crypto.randomUUID
@@ -79,6 +83,7 @@ const backToCourseBtn = document.getElementById("backToCourseBtn");
 const restartStudyBtn = document.getElementById("restartStudyBtn");
 const studyProgressEl = document.getElementById("studyProgress");
 const studyCardEl = document.getElementById("studyCard");
+const studyCardInnerEl = document.getElementById("studyCardInner");
 const studyQuestionEl = document.getElementById("studyQuestion");
 const studyAnswerContainerEl = document.getElementById("studyAnswerContainer");
 const studyAnswerTextEl = document.getElementById("studyAnswerText");
@@ -298,12 +303,12 @@ function renderCards() {
 
     const tdActions = document.createElement("td");
     const editBtn = document.createElement("button");
-    editBtn.className = "secondary small";
+    editBtn.className = "btn btn-secondary btn-sm";
     editBtn.textContent = "Redigera";
     editBtn.addEventListener("click", () => openCardModal(card.id));
 
     const deleteBtn = document.createElement("button");
-    deleteBtn.className = "danger small";
+    deleteBtn.className = "btn btn-danger btn-sm";
     deleteBtn.textContent = "Ta bort";
     deleteBtn.style.marginLeft = "0.25rem";
     deleteBtn.addEventListener("click", () => deleteCard(card.id));
@@ -343,6 +348,10 @@ function startStudy(all = true) {
   state.showAnswer = false;
   state.inStudyMode = true;
 
+  // progress
+  sessionSeenIds = new Set();
+  sessionTotal = cards.length;
+
   render();
 }
 
@@ -350,6 +359,10 @@ function handleStudyAnswer(isRight) {
   if (!state.inStudyMode || state.studyQueue.length === 0) return;
 
   const currentCardId = state.studyQueue[state.currentIndex];
+
+  // räkna progress (gjorda kort)
+  sessionSeenIds.add(currentCardId);
+
   if (!isRight) {
     if (!state.wrongQueue.includes(currentCardId)) {
       state.wrongQueue.push(currentCardId);
@@ -379,8 +392,7 @@ function renderStudyView() {
   const course = getSelectedCourse();
   if (!course) return;
 
-  const total = state.studyQueue.length;
-  const hasCards = total > 0;
+  const hasCards = state.studyQueue.length > 0;
 
   if (!state.inStudyMode) {
     studyViewEl.classList.add("hidden");
@@ -391,7 +403,7 @@ function renderStudyView() {
   courseViewEl.classList.add("hidden");
   studyViewEl.classList.remove("hidden");
 
-  // reset ev. transform från swipe
+  // reset transform/flip
   studyCardEl.style.transform = "";
   studyCardEl.style.opacity = "";
 
@@ -403,7 +415,7 @@ function renderStudyView() {
     wrongBtn.disabled = true;
     rightBtn.disabled = true;
 
-    studyProgressEl.textContent = "0 kort kvar";
+    studyProgressEl.textContent = `${sessionTotal}/${sessionTotal}`;
     studyFinishedTextEl.textContent =
       "Du har klarat alla flashcards i den här mappen.";
     return;
@@ -414,40 +426,44 @@ function renderStudyView() {
   wrongBtn.disabled = false;
   rightBtn.disabled = false;
 
-  const remaining = state.studyQueue.length - state.currentIndex;
-  studyProgressEl.textContent = `${remaining} kort kvar i denna omgång`;
+  // Progress: x/total
+  const doneCount = sessionSeenIds.size;
+  studyProgressEl.textContent = `${doneCount}/${sessionTotal}`;
 
   const cardId = state.studyQueue[state.currentIndex];
   const card = state.cards.find(c => c.id === cardId);
   if (!card) return;
 
+  // se till att vi visar fronten om state.showAnswer = false
+  if (state.showAnswer) {
+    studyCardInnerEl.classList.add("is-flipped");
+  } else {
+    studyCardInnerEl.classList.remove("is-flipped");
+  }
+
+  // front-sida
   studyQuestionEl.textContent = card.question;
 
-  if (state.showAnswer) {
-    studyAnswerContainerEl.classList.remove("hidden");
-
-    if (card.answerText) {
-      studyAnswerTextEl.textContent = card.answerText;
-      studyAnswerTextEl.classList.remove("hidden");
-    } else {
-      studyAnswerTextEl.textContent = "";
-      studyAnswerTextEl.classList.add("hidden");
-    }
-
-    if (card.imageData) {
-      studyAnswerImageEl.src = card.imageData;
-      studyAnswerImageEl.classList.remove("hidden");
-    } else {
-      studyAnswerImageEl.src = "";
-      studyAnswerImageEl.classList.add("hidden");
-    }
-
-    if (!card.answerText && !card.imageData) {
-      studyAnswerTextEl.textContent = "Inget svar angivet.";
-      studyAnswerTextEl.classList.remove("hidden");
-    }
+  // back-sida (svar)
+  if (card.answerText) {
+    studyAnswerTextEl.textContent = card.answerText;
+    studyAnswerTextEl.classList.remove("hidden");
   } else {
-    studyAnswerContainerEl.classList.add("hidden");
+    studyAnswerTextEl.textContent = "";
+    studyAnswerTextEl.classList.add("hidden");
+  }
+
+  if (card.imageData) {
+    studyAnswerImageEl.src = card.imageData;
+    studyAnswerImageEl.classList.remove("hidden");
+  } else {
+    studyAnswerImageEl.src = "";
+    studyAnswerImageEl.classList.add("hidden");
+  }
+
+  if (!card.answerText && !card.imageData) {
+    studyAnswerTextEl.textContent = "Inget svar angivet.";
+    studyAnswerTextEl.classList.remove("hidden");
   }
 }
 
@@ -515,7 +531,7 @@ studyRestartAllBtn.addEventListener("click", () => {
   startStudy(true);
 });
 
-// Klick på kortet = toggla visa/dölj svar (men inte direkt efter en swipe)
+// Klick på kortet = flip (vänd fram/baksida) – men inte direkt efter swipe
 studyCardEl.addEventListener("click", () => {
   if (suppressClickAfterSwipe) {
     suppressClickAfterSwipe = false;
@@ -538,7 +554,7 @@ studyCardEl.addEventListener(
     touchCurrentX = touch.clientX;
     isDraggingCard = true;
   },
-  { passive: false } // viktigt: måste vara false för att kunna stoppa scroll
+  { passive: false }
 );
 
 studyCardEl.addEventListener(
@@ -558,13 +574,13 @@ studyCardEl.addEventListener(
       return;
     }
 
-    // nu är det en horisontell swipe → blockera scroll
+    // nu är det horisontell swipe → blockera scroll
     e.preventDefault();
 
     const rotation = dx / 20;
     studyCardEl.style.transform = `translateX(${dx}px) rotate(${rotation}deg)`;
   },
-  { passive: false } // igen: behövs för preventDefault
+  { passive: false }
 );
 
 studyCardEl.addEventListener(
