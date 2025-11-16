@@ -525,7 +525,9 @@ studyCardEl.addEventListener("click", () => {
   renderStudyView();
 });
 
-// Swipe med touch (mobil)
+/* ===== SWIPE-PÅ-KORTET MED BLOCKERAD SID-SCROLL ===== */
+
+// Touch (mobil)
 studyCardEl.addEventListener(
   "touchstart",
   e => {
@@ -536,7 +538,7 @@ studyCardEl.addEventListener(
     touchCurrentX = touch.clientX;
     isDraggingCard = true;
   },
-  { passive: true }
+  { passive: false } // viktigt: måste vara false för att kunna stoppa scroll
 );
 
 studyCardEl.addEventListener(
@@ -548,13 +550,21 @@ studyCardEl.addEventListener(
     const dx = touchCurrentX - touchStartX;
     const dy = touch.clientY - touchStartY;
 
-    // Om draget är mer vertikalt än horisontellt: ignorera (för att låta sidan scrolla)
-    if (Math.abs(dy) > Math.abs(dx)) return;
+    // små rörelser → ignorera
+    if (Math.abs(dx) < 5 && Math.abs(dy) < 5) return;
+
+    if (Math.abs(dy) > Math.abs(dx)) {
+      // mer vertikalt än horisontellt: låt sidan scrolla
+      return;
+    }
+
+    // nu är det en horisontell swipe → blockera scroll
+    e.preventDefault();
 
     const rotation = dx / 20;
     studyCardEl.style.transform = `translateX(${dx}px) rotate(${rotation}deg)`;
   },
-  { passive: true }
+  { passive: false } // igen: behövs för preventDefault
 );
 
 studyCardEl.addEventListener(
@@ -566,7 +576,6 @@ studyCardEl.addEventListener(
     const dx = touchCurrentX - touchStartX;
     const threshold = 60;
 
-    // reset karta
     studyCardEl.style.transform = "";
     studyCardEl.style.opacity = "";
 
@@ -581,10 +590,10 @@ studyCardEl.addEventListener(
       }
     }
   },
-  { passive: true }
+  { passive: false }
 );
 
-// (Valfritt) swipe med mus/trackpad också
+// Mus / trackpad (desktop)
 studyCardEl.addEventListener("mousedown", e => {
   if (!state.inStudyMode || state.studyQueue.length === 0) return;
   isDraggingCard = true;
