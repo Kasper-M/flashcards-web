@@ -423,13 +423,13 @@ button:disabled,
   border-radius: 0.75rem;
 }
 
-/* Bilden på själva flashcardet – beskär inne i kortet */
 .study-answer-image {
   display: block;
-  width: 100%;
-  height: 100%;
-  max-height: 100%;
-  object-fit: cover; /* 🔥 ingen stretch, beskär istället */
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 60vh; /* bilden får aldrig bli högre än ~60% av skärmen */
+  object-fit: contain; /* 🔥 hela bilden syns, inget beskärs */
   margin-inline: auto;
   border-radius: 0.75rem;
 }
@@ -572,8 +572,7 @@ button:disabled,
   gap: 0.75rem;
   max-width: 95%;
   width: 100%;
-  max-height: 100%;
-  overflow: hidden; /* 🔥 klipp allt som är utanför kortet */
+  /* ingen max-height, ingen clipping → kortet får växa */
 }
 
 .study-answer-text {
