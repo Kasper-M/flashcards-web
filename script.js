@@ -186,6 +186,48 @@ async function loadDataFromSupabase() {
 }
 
 // ==========================
+//  MASTERY-HJÄLPPFUNKTIONER
+// ==========================
+
+// sätt ett kort som klarat (is_mastered = true) i databasen + lokalt
+async function setCardMastered(cardId) {
+  const { data, error } = await supabaseClient
+    .from("cards")
+    .update({ is_mastered: true })
+    .eq("id", cardId)
+    .select("id, is_mastered")
+    .single();
+
+  if (error) {
+    console.error("Kunde inte uppdatera mastery", error);
+    return;
+  }
+
+  const idx = state.cards.findIndex((c) => c.id === cardId);
+  if (idx !== -1) {
+    state.cards[idx].is_mastered = data.is_mastered;
+  }
+}
+
+// nollställ alla kort i en mapp (is_mastered = false)
+async function resetMasteryForCourse(courseId) {
+  const { error } = await supabaseClient
+    .from("cards")
+    .update({ is_mastered: false })
+    .eq("course_id", courseId);
+
+  if (error) {
+    console.error("Kunde inte resetta mastery", error);
+    alert("Kunde inte börja om flashcards.");
+    return;
+  }
+
+  state.cards = state.cards.map((card) =>
+    card.course_id === courseId ? { ...card, is_mastered: false } : card
+  );
+}
+
+// ==========================
 //  SWIPE VISUAL + ANIMATION
 // ==========================
 
@@ -599,7 +641,7 @@ function renderCards() {
 //  STUDY-LÄGE
 // ==========================
 
-function startStudy(all = true) {
+function startStudy(all = false) {
   const course = getSelectedCourse();
   if (!course) return;
   const cards = state.cards.filter((c) => c.course_id === course.id);
@@ -608,18 +650,24 @@ function startStudy(all = true) {
     return;
   }
 
-  if (all) {
-    state.studyQueue = cards.map((c) => c.id);
-  } else {
-    state.studyQueue = state.wrongQueue.slice();
+  // 🔥 om all = false → öva bara på de som inte är klarade
+  const pool = all ? cards : cards.filter((c) => !c.is_mastered);
+
+  if (pool.length === 0) {
+    alert(
+      "Du har redan klarat alla flashcards i den här mappen. Tryck 'Börja om flashcards' om du vill börja om."
+    );
+    return;
   }
 
+  state.studyQueue = pool.map((c) => c.id);
   state.wrongQueue = [];
   shuffleArray(state.studyQueue);
   state.currentIndex = 0;
   state.showAnswer = false;
   state.inStudyMode = true;
 
+  // persistent progress visas på mastery, inte session
   sessionSeenIds = new Set();
   sessionTotal = cards.length;
 
@@ -631,11 +679,18 @@ function handleStudyAnswer(isRight) {
 
   const currentCardId = state.studyQueue[state.currentIndex];
 
-  // markera att vi sett detta kort i den här sessionen
+  // markera att vi sett detta kort i den här sessionen (kan användas om du vill)
   sessionSeenIds.add(currentCardId);
 
-  // spara i fel-lista om nödvändigt
-  if (!isRight) {
+  const currentCard = state.cards.find((c) => c.id === currentCardId);
+
+  // om rätt svar: markera kortet som klarat (persistens i DB)
+  if (isRight && currentCard && !currentCard.is_mastered) {
+    // fire-and-forget, vi bryr oss inte om await här
+    setCardMastered(currentCardId);
+    currentCard.is_mastered = true;
+  } else if (!isRight) {
+    // fel → lägg till i wrongQueue om det inte redan finns
     if (!state.wrongQueue.includes(currentCardId)) {
       state.wrongQueue.push(currentCardId);
     }
@@ -653,13 +708,13 @@ function handleStudyAnswer(isRight) {
       state.wrongQueue = [];
       state.currentIndex = 0;
     } else {
-      // helt klar
+      // helt klar (alla i poolen klara)
       state.studyQueue = [];
       state.currentIndex = 0;
     }
   }
 
-  // 🔥 varje gång vi går till ett nytt kort: börja alltid på frågesidan
+  // nytt kort ska alltid börja på frågesidan
   state.showAnswer = false;
 
   renderStudyView();
@@ -700,8 +755,12 @@ function renderStudyView() {
   studyFinishedEl.classList.add("hidden");
   studyCardEl.classList.remove("hidden");
 
-  const doneCount = sessionSeenIds.size;
-  studyProgressEl.textContent = `${doneCount}/${sessionTotal}`;
+  // persistent progress per mapp
+  const courseCards = state.cards.filter((c) => c.course_id === course.id);
+  const total = courseCards.length;
+  const masteredCount = courseCards.filter((c) => c.is_mastered).length;
+
+  studyProgressEl.textContent = `${masteredCount}/${total}`;
 
   const cardId = state.studyQueue[state.currentIndex];
   const card = state.cards.find((c) => c.id === cardId);
@@ -822,15 +881,38 @@ deleteCourseBtn.addEventListener("click", () => {
 });
 
 // Study
-studyBtn.addEventListener("click", () => startStudy(true));
+studyBtn.addEventListener("click", () => startStudy(false));
 backToCourseBtn.addEventListener("click", () => {
   state.inStudyMode = false;
   render();
 });
-restartStudyBtn.addEventListener("click", () => {
-  startStudy(true);
+restartStudyBtn.addEventListener("click", async () => {
+  const course = getSelectedCourse();
+  if (!course) return;
+
+  if (
+    !confirm("Börja om flashcards i den här mappen och nollställ framsteg?")
+  ) {
+    return;
+  }
+
+  await resetMasteryForCourse(course.id);
+  startStudy(true); // starta om med alla kort
 });
-studyRestartAllBtn.addEventListener("click", () => {
+
+studyRestartAllBtn.addEventListener("click", async () => {
+  const course = getSelectedCourse();
+  if (!course) return;
+
+  if (
+    !confirm(
+      "Börja om alla flashcards i den här mappen och nollställ framsteg?"
+    )
+  ) {
+    return;
+  }
+
+  await resetMasteryForCourse(course.id);
   startStudy(true);
 });
 
