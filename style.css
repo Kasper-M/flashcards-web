@@ -427,13 +427,12 @@ button:disabled,
   display: block;
   width: auto;
   height: auto;
-  max-width: 100%;
-  max-height: 60vh; /* bilden får aldrig bli högre än ~60% av skärmen */
-  object-fit: contain; /* 🔥 hela bilden syns, inget beskärs */
+  max-width: 100%; /* får inte gå utanför kortets bredd */
+  max-height: 70vh; /* hela bilden, men max ~70% av skärmen */
+  object-fit: contain; /* 🔥 visa hela bilden, ingen beskärning */
   margin-inline: auto;
   border-radius: 0.75rem;
 }
-
 /* STUDY VIEW & FLASHCARD-LAYOUT */
 
 .study-view {
@@ -572,7 +571,7 @@ button:disabled,
   gap: 0.75rem;
   max-width: 95%;
   width: 100%;
-  /* ingen max-height, ingen clipping → kortet får växa */
+  /* ingen max-height, inget overflow här */
 }
 
 .study-answer-text {

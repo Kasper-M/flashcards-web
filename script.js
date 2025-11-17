@@ -248,18 +248,33 @@ function adjustCardHeight() {
   const back = document.querySelector(".study-card-back");
   if (!front || !back) return;
 
+  // Spara original-position
+  const originalFrontPos = front.style.position;
+  const originalBackPos = back.style.position;
+
+  // Tillfälligt: låt fron/back bli "vanliga" block så vi kan mäta riktig höjd
+  front.style.position = "static";
+  back.style.position = "static";
+
+  // släpp höjden så vi kan mäta fritt
   studyCardInnerEl.style.height = "auto";
 
-  const frontHeight = front.getBoundingClientRect().height;
-  const backHeight = back.getBoundingClientRect().height;
+  // scrollHeight här = verklig höjd av innehållet (inkl. bild)
+  const frontHeight = front.scrollHeight;
+  const backHeight = back.scrollHeight;
 
   const minHeight = 180;
-  const maxHeightForViewport = Math.floor(window.innerHeight * 0.8);
+  const maxHeightForViewport = Math.floor(window.innerHeight * 0.9); // upp till ~90% av skärmen
 
   let target = Math.max(minHeight, frontHeight, backHeight);
   target = Math.min(target, maxHeightForViewport);
 
+  // sätt kortets höjd
   studyCardInnerEl.style.height = target + "px";
+
+  // återställ position till absolute (för flip-effekten)
+  front.style.position = originalFrontPos || "";
+  back.style.position = originalBackPos || "";
 }
 
 // ==========================
