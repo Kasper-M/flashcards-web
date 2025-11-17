@@ -70,6 +70,7 @@ const cardListEl = document.getElementById("cardList");
 const noCardsMessageEl = document.getElementById("noCardsMessage");
 const addCardBtn = document.getElementById("addCardBtn");
 const deleteCourseBtn = document.getElementById("deleteCourseBtn");
+const resetMasteryBtn = document.getElementById("resetMasteryBtn");
 
 // Card-modal
 const cardModal = document.getElementById("cardModal");
@@ -898,6 +899,21 @@ restartStudyBtn.addEventListener("click", async () => {
 
   await resetMasteryForCourse(course.id);
   startStudy(true); // starta om med alla kort
+});
+
+resetMasteryBtn.addEventListener("click", async () => {
+  const course = getSelectedCourse();
+  if (!course) return;
+
+  if (
+    !confirm("Börja om flashcards i den här mappen och nollställ framsteg?")
+  ) {
+    return;
+  }
+
+  await resetMasteryForCourse(course.id);
+  // efter reset kan du välja om du vill direkt starta studieläge eller inte:
+  startStudy(true); // starta om på alla kort
 });
 
 studyRestartAllBtn.addEventListener("click", async () => {
