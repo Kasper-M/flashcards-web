@@ -631,29 +631,36 @@ function handleStudyAnswer(isRight) {
 
   const currentCardId = state.studyQueue[state.currentIndex];
 
+  // markera att vi sett detta kort i den här sessionen
   sessionSeenIds.add(currentCardId);
 
+  // spara i fel-lista om nödvändigt
   if (!isRight) {
     if (!state.wrongQueue.includes(currentCardId)) {
       state.wrongQueue.push(currentCardId);
     }
   }
 
+  // gå vidare till nästa index
   state.currentIndex++;
 
+  // om vi är i slutet av kön
   if (state.currentIndex >= state.studyQueue.length) {
     if (state.wrongQueue.length > 0) {
+      // nytt varv med bara de som blev fel
       state.studyQueue = state.wrongQueue.slice();
       shuffleArray(state.studyQueue);
       state.wrongQueue = [];
       state.currentIndex = 0;
-      state.showAnswer = false;
     } else {
+      // helt klar
       state.studyQueue = [];
       state.currentIndex = 0;
-      state.showAnswer = false;
     }
   }
+
+  // 🔥 varje gång vi går till ett nytt kort: börja alltid på frågesidan
+  state.showAnswer = false;
 
   renderStudyView();
 }
