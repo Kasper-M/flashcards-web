@@ -156,7 +156,6 @@ async function initAfterLogin(user) {
 async function loadDataFromSupabase() {
   if (!currentUser) return;
 
-  // Hämta mappar
   const { data: courses, error: coursesError } = await supabaseClient
     .from("courses")
     .select("*")
@@ -166,7 +165,6 @@ async function loadDataFromSupabase() {
     console.error("Kunde inte hämta courses", coursesError);
   }
 
-  // Hämta cards
   const { data: cards, error: cardsError } = await supabaseClient
     .from("cards")
     .select("*")
@@ -179,7 +177,6 @@ async function loadDataFromSupabase() {
   state.courses = courses || [];
   state.cards = cards || [];
 
-  // Om aktuell mapp inte finns längre, nolla den
   if (
     state.selectedCourseId &&
     !state.courses.find((c) => c.id === state.selectedCourseId)
@@ -189,7 +186,7 @@ async function loadDataFromSupabase() {
 }
 
 // ==========================
-//  SWIPE VISUAL
+//  SWIPE VISUAL + ANIMATION
 // ==========================
 
 function clearSwipeVisual() {
@@ -198,6 +195,7 @@ function clearSwipeVisual() {
   studyCardInnerEl.style.setProperty("--swipe-intensity", "0");
 }
 
+// uppdaterar färg + liten intensitet
 function updateSwipeVisual(dx) {
   if (!studyCardInnerEl) return;
 
@@ -222,7 +220,28 @@ function updateSwipeVisual(dx) {
   }
 }
 
-// Anpassa kortets höjd efter innehåll
+// snygg “flyg iväg”-animation när man släpper tillräckligt långt
+function animateCardSwipeOut(isRight, callback) {
+  const direction = isRight ? 1 : -1;
+
+  // kortet flyger iväg med rotation och fade
+  studyCardEl.style.transition =
+    "transform 0.22s ease-out, opacity 0.22s ease-out";
+  studyCardEl.style.transform = `translateX(${direction * 260}px) rotate(${
+    direction * 18
+  }deg)`;
+  studyCardEl.style.opacity = "0";
+
+  setTimeout(() => {
+    studyCardEl.style.transition = "";
+    studyCardEl.style.transform = "";
+    studyCardEl.style.opacity = "";
+    clearSwipeVisual();
+    if (callback) callback();
+  }, 220);
+}
+
+// Anpassa kortets höjd efter innehållet
 function adjustCardHeight() {
   if (!studyCardInnerEl) return;
   const front = document.querySelector(".study-card-front");
@@ -338,7 +357,6 @@ async function deleteCurrentCourse() {
     return;
   }
 
-  // lokalt
   state.courses = state.courses.filter((c) => c.id !== course.id);
   state.cards = state.cards.filter((card) => card.course_id !== course.id);
   state.selectedCourseId = null;
@@ -410,7 +428,6 @@ async function saveCard() {
   }
 
   if (editingCardId) {
-    // UPDATE
     const { data, error } = await supabaseClient
       .from("cards")
       .update({
@@ -433,7 +450,6 @@ async function saveCard() {
       state.cards[idx] = data;
     }
   } else {
-    // INSERT
     const { data, error } = await supabaseClient
       .from("cards")
       .insert({
@@ -613,6 +629,7 @@ function renderStudyView() {
 
   studyCardEl.style.transform = "";
   studyCardEl.style.opacity = "";
+  studyCardEl.style.transition = "";
   clearSwipeVisual();
 
   if (!hasCards) {
@@ -774,7 +791,10 @@ studyCardEl.addEventListener("click", () => {
   renderStudyView();
 });
 
-// Swipe touch
+// ==========================
+//  SWIPE – TOUCH
+// ==========================
+
 studyCardEl.addEventListener(
   "touchstart",
   (e) => {
@@ -784,6 +804,9 @@ studyCardEl.addEventListener(
     touchStartY = touch.clientY;
     touchCurrentX = touch.clientX;
     isDraggingCard = true;
+
+    // ta bort ev. gammal transition när vi börjar dra
+    studyCardEl.style.transition = "";
   },
   { passive: false }
 );
@@ -806,7 +829,14 @@ studyCardEl.addEventListener(
     e.preventDefault();
 
     const rotation = dx / 20;
-    studyCardEl.style.transform = `translateX(${dx}px) rotate(${rotation}deg)`;
+    const absDx = Math.abs(dx);
+    const maxDistance = 140;
+    let intensity = absDx / maxDistance;
+    if (intensity > 1) intensity = 1;
+
+    const scale = 1 - intensity * 0.05; // ju längre ut, desto mer "loss" från skärmen
+    studyCardEl.style.transform = `translateX(${dx}px) rotate(${rotation}deg) scale(${scale})`;
+
     updateSwipeVisual(dx);
   },
   { passive: false }
@@ -821,23 +851,29 @@ studyCardEl.addEventListener(
     const dx = touchCurrentX - touchStartX;
     const threshold = 60;
 
-    studyCardEl.style.transform = "";
-    studyCardEl.style.opacity = "";
-    clearSwipeVisual();
-
     if (Math.abs(dx) > threshold) {
       suppressClickAfterSwipe = true;
-      if (dx > 0) {
-        handleStudyAnswer(true); // höger = rätt
-      } else {
-        handleStudyAnswer(false); // vänster = fel
-      }
+      const isRight = dx > 0;
+      animateCardSwipeOut(isRight, () => {
+        handleStudyAnswer(isRight);
+      });
+    } else {
+      // tillbaka till mitten
+      studyCardEl.style.transition = "transform 0.18s ease-out";
+      studyCardEl.style.transform = "";
+      setTimeout(() => {
+        studyCardEl.style.transition = "";
+        clearSwipeVisual();
+      }, 180);
     }
   },
   { passive: false }
 );
 
-// Swipe med mus
+// ==========================
+//  SWIPE – MUS / DESKTOP
+// ==========================
+
 studyCardEl.addEventListener("mousedown", (e) => {
   if (!state.inStudyMode || state.studyQueue.length === 0) return;
   isDraggingCard = true;
@@ -845,14 +881,23 @@ studyCardEl.addEventListener("mousedown", (e) => {
   touchStartY = e.clientY;
   touchCurrentX = e.clientX;
 
+  studyCardEl.style.transition = "";
+
   const onMouseMove = (ev) => {
     if (!isDraggingCard) return;
     touchCurrentX = ev.clientX;
     const dx = touchCurrentX - touchStartX;
     const dy = ev.clientY - touchStartY;
     if (Math.abs(dy) > Math.abs(dx)) return;
+
     const rotation = dx / 20;
-    studyCardEl.style.transform = `translateX(${dx}px) rotate(${rotation}deg)`;
+    const absDx = Math.abs(dx);
+    const maxDistance = 140;
+    let intensity = absDx / maxDistance;
+    if (intensity > 1) intensity = 1;
+    const scale = 1 - intensity * 0.05;
+
+    studyCardEl.style.transform = `translateX(${dx}px) rotate(${rotation}deg) scale(${scale})`;
     updateSwipeVisual(dx);
   };
 
@@ -865,17 +910,19 @@ studyCardEl.addEventListener("mousedown", (e) => {
     const dx = ev.clientX - touchStartX;
     const threshold = 80;
 
-    studyCardEl.style.transform = "";
-    studyCardEl.style.opacity = "";
-    clearSwipeVisual();
-
     if (Math.abs(dx) > threshold) {
       suppressClickAfterSwipe = true;
-      if (dx > 0) {
-        handleStudyAnswer(true);
-      } else {
-        handleStudyAnswer(false);
-      }
+      const isRight = dx > 0;
+      animateCardSwipeOut(isRight, () => {
+        handleStudyAnswer(isRight);
+      });
+    } else {
+      studyCardEl.style.transition = "transform 0.18s ease-out";
+      studyCardEl.style.transform = "";
+      setTimeout(() => {
+        studyCardEl.style.transition = "";
+        clearSwipeVisual();
+      }, 180);
     }
   };
 
@@ -905,7 +952,7 @@ window.addEventListener("resize", () => {
 });
 
 // ==========================
-//  INIT – KOLLA OM HON REDAN ÄR INLOGGAD
+//  INIT – KOLLA SESSION
 // ==========================
 
 (async () => {
