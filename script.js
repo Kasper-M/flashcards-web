@@ -406,11 +406,42 @@ function closeCardModal() {
 function handleCardImageChange(e) {
   const file = e.target.files[0];
   if (!file) return;
+
   const reader = new FileReader();
   reader.onload = (ev) => {
-    cardImageDataTemp = ev.target.result;
-    cardImagePreview.src = cardImageDataTemp;
-    cardImagePreviewContainer.classList.remove("hidden");
+    const img = new Image();
+    img.onload = () => {
+      // max-dimension på bilden (i pixlar)
+      const maxDim = 900;
+      let width = img.width;
+      let height = img.height;
+
+      if (width > height) {
+        if (width > maxDim) {
+          height = Math.round((height * maxDim) / width);
+          width = maxDim;
+        }
+      } else {
+        if (height > maxDim) {
+          width = Math.round((width * maxDim) / height);
+          height = maxDim;
+        }
+      }
+
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0, width, height);
+
+      // komprimera till JPEG (0.75 = 75% kvalitet)
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.75);
+
+      cardImageDataTemp = dataUrl;
+      cardImagePreview.src = dataUrl;
+      cardImagePreviewContainer.classList.remove("hidden");
+    };
+    img.src = ev.target.result;
   };
   reader.readAsDataURL(file);
 }
